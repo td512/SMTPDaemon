@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    gserver (0.0.1)
+    mini-smtp-server (0.0.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  gserver
+  mini-smtp-server
+
+BUNDLED WITH
+   1.15.3
