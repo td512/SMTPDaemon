@@ -113,7 +113,7 @@ const server = new SMTPServer({
               mail.headers.has("cc") ? mail_message_cc = mail.cc.text : mail_message_cc = null;
               mail.headers.has("bcc") ? mail_message_bcc = mail.headers.get("bcc") : mail_message_bcc = null;
               mail.headers.has("priority") ? mail_message_priority = mail.headers.get("priority") : mail_message_priority = "normal";
-              mail.headers.has("date") ? mail_message_date = mail.headers.get("date") : mail_message_date = new Date('yourdatehere').toISOString();
+              mail.headers.has("date") ? mail_message_date = mail.headers.get("date") : mail_message_date = new Date(Date.now()).toISOString();
               mail.text ? mail_message_body = mail.text : "(no body)";
               console.log(`[${session.id}] Inserting row.`)
               ms_db.one('INSERT INTO inbox(to_user, from_address, subject, cc, bcc, priority, date, body) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id', [mail_message_to, mail_message_from, mail_message_subject, mail_message_cc, mail_message_bcc, mail_message_priority, mail_message_date, mail_message_body])
