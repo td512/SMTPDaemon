@@ -1,0 +1,42 @@
+# Monarch SMTP server config file
+#
+# Service hostname
+SERVICE_HOSTNAME: "smtp.gomonar.ch"
+# Connect banner
+SERVICE_BANNER: "Monarch SMTP server"
+# Which port should we bind to?
+SERVICE_PORT: 9025
+# How many sessions should we accept per IP?
+SERVICE_MAX_SESSIONS: 3
+# What we say when they say QUIT
+SERVICE_GOODBYE: "Goodbye"
+# What we say when they don't send EHLO
+SERVICE_NO_HELO: "send HELO/EHLO first"
+# What we say when they don't say MAIL
+SERVICE_NO_MAIL: "send MAIL first"
+# What we say when they don't say RCPT
+SERVICE_NO_RCPT: "send RCPT first"
+# What we say when we've accepted the data
+SERVICE_ACCEPTED: "Accepted"
+# What we say when they say DATA
+SERVICE_DATA_MOTD: "End data with <CR><LF>.<CR><LF>"
+# What we say when they say VRFY
+SERVICE_VRFY: "Try to send something. No promises though"
+# What we say when they say HELP
+SERVICE_HELP: "See https://tools.ietf.org/html/rfc5321 for details"
+# What we say when they give us the wrong authentication type
+SERVICE_UNK_AUTH: "Unrecognized authentication type"
+# What we say when they give us an unknown command
+SERVICE_UNK_CMD: "command not recognized"
+# What we say when they say NOOP or RSET
+SERVICE_NOOP: "OK"
+# What we say when they say they're done with the data stream
+SERVICE_MAIL_QUEUED: "OK: message queued"
+# What we say when they try to open more connections than we allow
+SERVICE_TOO_MANY_CONNECTIONS: "You have too many open connections"
+# What we say when they timeout
+SERVICE_TIMEOUT_NOTICE: "Timeout - closing connection"
+# The maximum amount of time we'll wait (negative 1 second) before flushing the session pool
+SERVICE_CLEAR_SESSIONS_TIMER: 301
+# The maximum amount of time we'll wait (negative 1 second) for a command before killing them
+SERVICE_MAX_TIMEOUT: 21

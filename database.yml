@@ -1,0 +1,6 @@
+host: 'localhost'
+adapter: 'postgresql'
+database: 'MailServer'
+username: 'theo' 
+encoding: 'utf8'
+pool: 5

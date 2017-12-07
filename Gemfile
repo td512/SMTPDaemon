@@ -1,3 +1,6 @@
 source 'https://rubygems.org'
-gem 'mini-smtp-server'
-gem 'gserver'
+gem 'colored'
+gem 'pg'
+gem 'activerecord', '~>5.0'
+gem 'dkim-query'
+gem 'spf-query'
