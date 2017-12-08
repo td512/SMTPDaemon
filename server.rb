@@ -84,23 +84,29 @@ class Server
   def getSPFRecords(domain, ip)
     spf_array = Array.new
     addr_array = Array.new
-    SPF::Query::Record.query(domain).include.each do |dspf|
-      spf_array.push(dspf)
+    if SPF::Query::Record.query(domain) != nil
+      SPF::Query::Record.query(domain).include.each do |dspf|
+        spf_array.push(dspf)
+      end
+    end
+    if spf_array.empty?
+      @spf_pass = 1
     end
     while ! spf_array.empty? do
       spf_array.each do |s|
         spf_array.delete_at(spf_array.index(s))
-        SPF::Query::Record.query(s.value).each do |spf|
-          x = spf.to_s.split(":")
-          if x[0] == "ip4"
-            addr_array.push(x[1])
-          end
-          if x[0] == "include"
-            spf_array.push(x[1])
+          SPF::Query::Record.query(s.value).each do |spf|
+            x = spf.to_s.split(":")
+            if x[0] == "ip4"
+              addr_array.push(x[1])
+            end
+            if x[0] == "include"
+              spf_array.push(x[1])
+            end
           end
         end
       end
-    end
+      puts addr_array
     addr_array.each do |addr|
       cidr = NetAddr::CIDR.create(addr)
       if cidr.contains?(ip)
@@ -110,7 +116,7 @@ class Server
   end
   def checkClientDomain
     getSPFRecords(@client_motd, @client_host.split(" ").last)
-    if ! @spf_pass == 1
+    if @spf_pass == 1
       puts "match"
       printMotd
     else
