@@ -5,7 +5,8 @@ require "rubygems"
 require "bundler/setup"
 require "active_record"
 require 'securerandom'
-
+require 'spf/query'
+require 'netaddr'
 
 project_root = File.dirname(File.absolute_path(__FILE__))
 Dir.glob(project_root + "/app/models/*.rb").each{|f| require f}
@@ -26,8 +27,10 @@ class Server
     @auth_user = String.new
     @auth_pass = String.new
     @authu = 0
+    @client_motd = String.new
     @authp = 0
     @timer = 0
+    @spf_pass = 0
     @sid = SecureRandom.uuid
     clearSessionPool
     run
@@ -73,8 +76,48 @@ class Server
     @mail_from = 0
     @rcpt_to = 0
     @data = 0
+    @client_motd = String.new
+    @spf_pass = 0
     @data_var = String.new
     @timeout = 1
+  end
+  def getSPFRecords(domain, ip)
+    spf_array = Array.new
+    addr_array = Array.new
+    SPF::Query::Record.query(domain).include.each do |dspf|
+      spf_array.push(dspf)
+    end
+    while ! spf_array.empty? do
+      spf_array.each do |s|
+        spf_array.delete_at(spf_array.index(s))
+        SPF::Query::Record.query(s.value).each do |spf|
+          x = spf.to_s.split(":")
+          if x[0] == "ip4"
+            addr_array.push(x[1])
+          end
+          if x[0] == "include"
+            spf_array.push(x[1])
+          end
+        end
+      end
+    end
+    addr_array.each do |addr|
+      cidr = NetAddr::CIDR.create(addr)
+      if cidr.contains?(ip)
+        @spf_pass = 1
+      end
+    end
+  end
+  def checkClientDomain
+    getSPFRecords(@client_motd, @client_host.split(" ").last)
+    if ! @spf_pass == 1
+      puts "match"
+      printMotd
+    else
+      puts "nom"
+      @client.print("421 #{@config["SERVICE_NO_MATCH"]}\r\n")
+      @client.close
+    end
   end
   def printMotd
     @client.print "250-#{@config["SERVICE_HOSTNAME"]} Nice to meet you, [#{@client_host.split(" ").last}]\r\n"
@@ -141,9 +184,11 @@ class Server
     end
     case
     when (m.include?("helo"))
-      printMotd
+      @client_motd = m.split(" ").last
+      checkClientDomain
     when (m.include?("ehlo"))
-      printMotd
+      @client_motd = m.split(" ").last
+      checkClientDomain
     when (m.include?("quit"))
       s = @sess.session_count.to_i
       s = s - 1

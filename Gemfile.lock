@@ -20,6 +20,7 @@ GEM
     i18n (0.9.1)
       concurrent-ruby (~> 1.0)
     minitest (5.10.3)
+    netaddr (1.5.1)
     parslet (1.8.1)
     pg (0.21.0)
     spf-query (0.1.5)
@@ -35,6 +36,7 @@ DEPENDENCIES
   activerecord (~> 5.0)
   colored
   dkim-query
+  netaddr
   pg
   spf-query
 

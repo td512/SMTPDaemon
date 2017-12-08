@@ -36,6 +36,8 @@ SERVICE_MAIL_QUEUED: "OK: message queued"
 SERVICE_TOO_MANY_CONNECTIONS: "You have too many open connections"
 # What we say when they timeout
 SERVICE_TIMEOUT_NOTICE: "Timeout - closing connection"
+# What we say when we don't think they are allowed to send mail on behalf of a domain
+SERVICE_NO_MATCH: "You are not on the allowed SPF list for that domain"
 # The maximum amount of time we'll wait (negative 1 second) before flushing the session pool
 SERVICE_CLEAR_SESSIONS_TIMER: 301
 # The maximum amount of time we'll wait (negative 1 second) for a command before killing them
