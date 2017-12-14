@@ -120,7 +120,8 @@ class Server
   def checkClientDomain
     getSPFRecords(@client_motd, @client_host.split(" ").last)
     if @spf_pass == 1
-      printMotd
+      @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
+      @mail_from = 1
     else
       @client.print("421 #{@config["SERVICE_NO_MATCH"]}\r\n")
       @client.close
@@ -191,11 +192,9 @@ class Server
     end
     case
     when (m.include?("helo"))
-      @client_motd = m.split(" ").last
-      checkClientDomain
+      printMotd
     when (m.include?("ehlo"))
-      @client_motd = m.split(" ").last
-      checkClientDomain
+      printMotd
     when (m.include?("quit"))
       s = @sess.session_count.to_i
       s = s - 1
@@ -214,8 +213,8 @@ class Server
         m.slice! "mail from: "
         m.tr!('<>?=#$%^&*()', '')
         @from = m
-        @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
-        @mail_from = 1
+        @client_motd = @from.split('@').last
+        checkClientDomain
       end
     when (m.include?("rcpt"))
       if @helo == 0
