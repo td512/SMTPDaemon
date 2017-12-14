@@ -7,6 +7,7 @@ require "active_record"
 require 'securerandom'
 require 'spf/query'
 require 'netaddr'
+require 'ostruct'
 
 project_root = File.dirname(File.absolute_path(__FILE__))
 Dir.glob(project_root + "/app/models/*.rb").each{|f| require f}
@@ -87,6 +88,7 @@ class Server
     if SPF::Query::Record.query(domain) != nil
       SPF::Query::Record.query(domain).include.each do |dspf|
         spf_array.push(dspf)
+        @timer = 0
       end
     end
     if spf_array.empty?
@@ -98,15 +100,16 @@ class Server
           SPF::Query::Record.query(s.value).each do |spf|
             x = spf.to_s.split(":")
             if x[0] == "ip4"
+              @timer = 0
               addr_array.push(x[1])
             end
             if x[0] == "include"
-              spf_array.push(x[1])
+              @timer = 0
+              spf_array.push(OpenStruct.new(value: x[1]))
             end
           end
         end
       end
-      puts addr_array
     addr_array.each do |addr|
       cidr = NetAddr::CIDR.create(addr)
       if cidr.contains?(ip)
@@ -117,10 +120,8 @@ class Server
   def checkClientDomain
     getSPFRecords(@client_motd, @client_host.split(" ").last)
     if @spf_pass == 1
-      puts "match"
       printMotd
     else
-      puts "nom"
       @client.print("421 #{@config["SERVICE_NO_MATCH"]}\r\n")
       @client.close
     end
