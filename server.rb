@@ -71,6 +71,12 @@ class Server
   def stopCounting
     Thread.kill @counter
   end
+  def decrementIPConnCount
+    s = @sess.session_count.to_i
+    s = s - 1
+    @sess.session_count = s
+    @sess.save
+  end
   def clearVars
     @to = String.new
     @from = String.new
@@ -123,6 +129,8 @@ class Server
       @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
       @mail_from = 1
     else
+      decrementIPConnCount
+      puts "Client #{@client_host.split(" ").last} disconnected"
       @client.print("421 #{@config["SERVICE_NO_MATCH"]}\r\n")
       @client.close
     end
@@ -147,6 +155,7 @@ class Server
         else
           @sess = Session.find_by(ip: client.peeraddr.last)
           if @sess.session_count.to_i > @config["SERVICE_MAX_SESSIONS"]
+            decrementIPConnCount
             client.print "421 #{@config["SERVICE_TOO_MANY_CONNECTIONS"]}\r\n"
             client.close
             Thread.kill self
@@ -196,10 +205,7 @@ class Server
     when (m.include?("ehlo"))
       printMotd
     when (m.include?("quit"))
-      s = @sess.session_count.to_i
-      s = s - 1
-      @sess.session_count = s
-      @sess.save
+      decrementIPConnCount
       clearVars
       @client.print "221 #{@config["SERVICE_GOODBYE"]}\r\n"
       puts "Client #{@client_host.split(" ").last} disconnected"
