@@ -8,6 +8,8 @@ require 'securerandom'
 require 'spf/query'
 require 'netaddr'
 require 'ostruct'
+require 'mail'
+
 
 project_root = File.dirname(File.absolute_path(__FILE__))
 Dir.glob(project_root + "/app/models/*.rb").each{|f| require f}
@@ -178,10 +180,16 @@ class Server
     @timer = 0
     if((@data == 1) && (msg.chomp =~ /^\.$/))
       @data = 0
+      mail = Mail.new(@data_var)
       puts "Mail from: #{@from}"
       puts "Mail for: #{@to}"
+      puts "Subject: #{mail.subject}"
       puts "Body:"
-      puts @data_var
+      if mail.multipart?
+        puts mail.parts[0].body.decoded
+      else
+        puts mail.body.decoded
+      end
       clearVars
       @client.print "250 #{@config["SERVICE_MAIL_QUEUED"]}\r\n"
     end
