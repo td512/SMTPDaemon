@@ -1,6 +1,6 @@
 class CreateMailserver < ActiveRecord::Migration[5.0]
   def change
-    create_table :inbox do |t|
+    create_table :emails do |t|
       t.string :to_user
       t.string :from_address
       t.string :subject
@@ -10,6 +10,8 @@ class CreateMailserver < ActiveRecord::Migration[5.0]
       t.string :date
       t.string :body
       t.string :attachments
+      t.string :raw_email
+      t.string :read
     end
     create_table :sessions do |t|
       t.string :ip

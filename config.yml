@@ -8,6 +8,12 @@ SERVICE_BANNER: "Monarch SMTP server"
 SERVICE_PORT: 9025
 # How many sessions should we accept per IP?
 SERVICE_MAX_SESSIONS: 3
+# Which domains do we want the SMTPd to receive mail for?
+SERVICE_DOMAINS:
+  - zzz.theom.nz
+  - monarchshells.com
+# Do we want SPF on or off?
+SERVICE_SPF: 0
 # What we say when they say QUIT
 SERVICE_GOODBYE: "Goodbye"
 # What we say when they don't send EHLO
@@ -37,7 +43,9 @@ SERVICE_TOO_MANY_CONNECTIONS: "You have too many open connections"
 # What we say when they timeout
 SERVICE_TIMEOUT_NOTICE: "Timeout - closing connection"
 # What we say when we don't think they are allowed to send mail on behalf of a domain
-SERVICE_NO_MATCH: "You are not on the allowed SPF list for that domain"
+SERVICE_NO_MATCH: "You aren't on the allowed SPF list for that domain"
+# What we say when we don't handle mail for that domain
+SERVICE_NO_SUCH_ADDRESS: "I don't handle mail for that domain"
 # The maximum amount of time we'll wait (negative 1 second) before flushing the session pool
 SERVICE_CLEAR_SESSIONS_TIMER: 301
 # The maximum amount of time we'll wait (negative 1 second) for a command before killing them

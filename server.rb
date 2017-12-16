@@ -21,8 +21,6 @@ class Server
     @server = TCPServer.open( ip, port )
     @config = YAML.load(File.read(File.expand_path('../config.yml', __FILE__)))
     @helo = 0
-    @to = String.new
-    @from = String.new
     @mail_from = 0
     @rcpt_to = 0
     @data = 0
@@ -37,9 +35,6 @@ class Server
     @sid = SecureRandom.uuid
     clearSessionPool
     run
-  end
-  def restartClearSessionPool
-    clearSessionPool
   end
   def clearSessionPool
     ip_timer = 0
@@ -60,6 +55,7 @@ class Server
     @counter = Thread.new do
       while @timer != @config["SERVICE_MAX_TIMEOUT"]
         if @timer >= @config["SERVICE_MAX_TIMEOUT"] - 1
+          puts "Client #{@client_host.split(" ").last} disconnected (Too many connections)".red
           @client.print "421 #{@config["SERVICE_TIMEOUT_NOTICE"]}\r\n"
           @client.close
           @timer = 0
@@ -80,8 +76,6 @@ class Server
     @sess.save
   end
   def clearVars
-    @to = String.new
-    @from = String.new
     @mail_from = 0
     @rcpt_to = 0
     @data = 0
@@ -91,38 +85,42 @@ class Server
     @timeout = 1
   end
   def getSPFRecords(domain, ip)
-    spf_array = Array.new
-    addr_array = Array.new
-    if SPF::Query::Record.query(domain) != nil
-      SPF::Query::Record.query(domain).include.each do |dspf|
-        spf_array.push(dspf)
-        @timer = 0
+    if @config["SERVICE_SPF"] == 1
+      spf_array = Array.new
+      addr_array = Array.new
+      if SPF::Query::Record.query(domain) != nil
+        SPF::Query::Record.query(domain).include.each do |dspf|
+          spf_array.push(dspf)
+          @timer = 0
+        end
       end
-    end
-    if spf_array.empty?
-      @spf_pass = 1
-    end
-    while ! spf_array.empty? do
-      spf_array.each do |s|
-        spf_array.delete_at(spf_array.index(s))
-          SPF::Query::Record.query(s.value).each do |spf|
-            x = spf.to_s.split(":")
-            if x[0] == "ip4"
-              @timer = 0
-              addr_array.push(x[1])
-            end
-            if x[0] == "include"
-              @timer = 0
-              spf_array.push(OpenStruct.new(value: x[1]))
+      if spf_array.empty?
+        @spf_pass = 1
+      end
+      while ! spf_array.empty? do
+        spf_array.each do |s|
+          spf_array.delete_at(spf_array.index(s))
+            SPF::Query::Record.query(s.value).each do |spf|
+              x = spf.to_s.split(":")
+              if x[0] == "ip4"
+                @timer = 0
+                addr_array.push(x[1])
+              end
+              if x[0] == "include"
+                @timer = 0
+                spf_array.push(OpenStruct.new(value: x[1]))
+              end
             end
           end
         end
+      addr_array.each do |addr|
+        cidr = NetAddr::CIDR.create(addr)
+        if cidr.contains?(ip)
+          @spf_pass = 1
+        end
       end
-    addr_array.each do |addr|
-      cidr = NetAddr::CIDR.create(addr)
-      if cidr.contains?(ip)
-        @spf_pass = 1
-      end
+    else
+      @spf_pass = 1
     end
   end
   def checkClientDomain
@@ -132,8 +130,19 @@ class Server
       @mail_from = 1
     else
       decrementIPConnCount
-      puts "Client #{@client_host.split(" ").last} disconnected"
+      puts "Client #{@client_host.split(" ").last} disconnected (SPF record doesn't match)".red
       @client.print("421 #{@config["SERVICE_NO_MATCH"]}\r\n")
+      @client.close
+    end
+  end
+  def checkRecvDomain
+    if @config["SERVICE_DOMAINS"].include? @rcpt_addr
+      @rcpt_to = 1
+      @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
+    else
+      decrementIPConnCount
+      puts "Client #{@client_host.split(" ").last} disconnected (Domain mismatch [#{@rcpt_addr}])".red
+      @client.print("550 #{@config["SERVICE_NO_SUCH_ADDRESS"]}\r\n")
       @client.close
     end
   end
@@ -178,35 +187,24 @@ class Server
   def listen_commands( msg )
     m = msg.downcase
     @timer = 0
-    if((@data == 1) && (msg.chomp =~ /^\.$/))
-      @data = 0
+    if((@data == 1) && (msg.chomp == "."))
       mail = Mail.new(@data_var)
-      puts "Mail from: #{@from}"
-      puts "Mail for: #{@to}"
-      puts "Subject: #{mail.subject}"
-      puts "Body:"
       if mail.multipart?
-        puts mail.parts[0].body.decoded
+        body = mail.parts[1].body.decoded
       else
-        puts mail.body.decoded
+        body = mail.body.decoded
       end
+      email = Email.new(:to_user => mail.to[0], :from_address => mail.from[0], :subject => mail.subject, :date => mail.date.to_s, :body => body, :priority => 'Normal', :raw_email => @data_var, :read => "0")
+      email.save
+      puts "Email delivered, row #{email.id}.".green
       clearVars
       @client.print "250 #{@config["SERVICE_MAIL_QUEUED"]}\r\n"
     end
     if(@data == 1)
       @data_var += (msg + "\r\n")
     end
-    if(@authu == 1)
-      @auth_user = msg
-      puts @auth_user
-      @authu = 0
-      @authp = 1
-    end
-    if(@authp == 1)
-      @auth_pass = msg
-      puts @auth_pass
-      @authp = 0
-    end
+    case
+    when (@data == 0)
     case
     when (m.include?("helo"))
       printMotd
@@ -225,9 +223,9 @@ class Server
         @client.print "503 Error: #{@config["SERVICE_NO_HELO"]}\r\n"
       else
         m.slice! "mail from: "
+        m.slice! "mail from:"
         m.tr!('<>?=#$%^&*()', '')
-        @from = m
-        @client_motd = @from.split('@').last
+        @client_motd = m.split('@').last
         checkClientDomain
       end
     when (m.include?("rcpt"))
@@ -238,11 +236,10 @@ class Server
         @client.print "503 Error: #{@config["SERVICE_NO_MAIL"]}\r\n"
       else
         m.slice! "rcpt to: "
+        m.slice! "rcpt to:"
         m.tr!('<>?=#$%^&*()', '')
-        @to = m
-        @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
-        @rcpt_to = 1
-        puts "Got mail for #{@to} from #{@from}, sender: #{@client_host.split(" ").last}".yellow
+        @rcpt_addr = m.split('@').last
+        checkRecvDomain
       end
     when (m.include?("data"))
       if @helo == 0
@@ -266,26 +263,19 @@ class Server
       @client.print "250 #{@config["SERVICE_NOOP"]}\r\n"
     when (m.include?("help"))
       @client.print "214 #{@config["SERVICE_HELP"]}\r\n"
-    when (m.include?("auth"))
-      if m.split(" ")[1] != "login"
-        @client.print "504 Error: #{@config["SERVICE_UNK_AUTH"]}\r\n"
-        puts "Client #{@client_host.split(" ").last} failed authentication: Wrong type".red
-      else
-        @client.print "334 VXNlcm5hbWU6\r\n"
-        @authu = 1
-        @client.print "334 UGFzc3dvcmQ6\r\n"
-        @client.print "250 #{@config["SERVICE_ACCEPTED"]}\r\n"
-      end
     else
       if ! @data == 1
         @client.print "500 Error: #{@config["SERVICE_UNK_CMD"]}\r\n"
       end
     end
+  else
+    # This comment must stay here
+  end
   end
 }
 end
 end
 config = YAML.load(File.read(File.expand_path('../config.yml', __FILE__)))
-puts "\x1Bc"
+print "\x1Bc"
 puts "SMTPd running on port #{config["SERVICE_PORT"]}"
 Server.new( config["SERVICE_PORT"], "0.0.0.0" )
