@@ -14,6 +14,13 @@ SERVICE_DOMAINS:
   - monarchshells.com
 # Do we want SPF on or off?
 SERVICE_SPF: 0
+# What do we want to say in our EHLO response?
+SERVICE_CAPABILITIES:
+  - PIPELINING
+  - 8BITMIME
+  - SMTPUTF8
+# Maximum message size (in MB)
+SERVICE_MAX_SIZE: 10
 # What we say when they say QUIT
 SERVICE_GOODBYE: "Goodbye"
 # What we say when they don't send EHLO

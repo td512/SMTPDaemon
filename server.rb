@@ -148,11 +148,10 @@ class Server
   end
   def printMotd
     @client.print "250-#{@config["SERVICE_HOSTNAME"]} Nice to meet you, [#{@client_host.split(" ").last}]\r\n"
-    @client.print "250-PIPELINING\r\n"
-    @client.print "250-8BITMIME\r\n"
-    @client.print "250-SMTPUTF8\r\n"
-    @client.print "250-AUTH LOGIN\r\n"
-    @client.print "250 SIZE 10485760\r\n"
+    @config["SERVICE_CAPABILITIES"].each do |cap|
+      @client.print "250-#{cap}\r\n"
+    end
+    @client.print "250 SIZE #{@config["SERVICE_MAX_SIZE"]*1024*1024}\r\n"
     @helo = 1
   end
   def run
