@@ -192,8 +192,9 @@ class Server
         body = mail.parts[1].body.decoded
       else
         body = mail.body.decoded
+        body = "<pre>"+body+"</pre>"
       end
-      email = Email.new(:to_user => mail.to[0], :from_address => mail.from[0], :subject => mail.subject, :date => mail.date.to_s, :body => body, :priority => 'Normal', :raw_email => @data_var, :read => "0")
+      email = Email.new(:to_user => Mail::Address.new(mail.to[0]).local, :from_address => mail.from[0], :subject => mail.subject, :date => mail.date.to_s, :body => body, :priority => 'Normal', :raw_email => @data_var, :read => "0")
       email.save
       puts "Email delivered, row #{email.id}.".green
       clearVars
