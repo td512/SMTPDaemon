@@ -1,42 +1,42 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (5.1.4)
-      activesupport (= 5.1.4)
-    activerecord (5.1.4)
-      activemodel (= 5.1.4)
-      activesupport (= 5.1.4)
-      arel (~> 8.0)
-    activesupport (5.1.4)
+    activemodel (5.2.4.5)
+      activesupport (= 5.2.4.5)
+    activerecord (5.2.4.5)
+      activemodel (= 5.2.4.5)
+      activesupport (= 5.2.4.5)
+      arel (>= 9.0)
+    activesupport (5.2.4.5)
       concurrent-ruby (~> 1.0, >= 1.0.2)
-      i18n (~> 0.7)
+      i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
-    arel (8.0.0)
+    arel (9.0.0)
     colored (1.2)
-    concurrent-ruby (1.0.5)
+    concurrent-ruby (1.1.8)
     dkim-query (0.2.6)
       parslet (~> 1.6)
-    i18n (0.9.1)
+    i18n (1.8.9)
       concurrent-ruby (~> 1.0)
     mail (2.7.0)
       mini_mime (>= 0.1.1)
     mini_mime (1.0.0)
-    minitest (5.10.3)
+    minitest (5.14.4)
     netaddr (2.0.4)
     parslet (1.8.1)
     pg (0.21.0)
     spf-query (0.1.5)
       parslet (~> 1.0)
     thread_safe (0.3.6)
-    tzinfo (1.2.4)
+    tzinfo (1.2.9)
       thread_safe (~> 0.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord (~> 5.0)
+  activerecord (~> 5.2)
   colored
   dkim-query
   mail
